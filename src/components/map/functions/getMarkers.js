@@ -10,6 +10,7 @@ const getMarkers = (map, google, infowindow, markersInfo) => {
     let marker = new google.maps.Marker({
       position: latLng,
       title: dealer.content.name,
+      id: dealer.id,
     });
     bounds.extend(latLng);
     marker.addListener("click", () => {

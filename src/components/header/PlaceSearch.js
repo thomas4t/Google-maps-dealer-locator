@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useSelector, useDispatch } from "react-redux";
+import { useDispatch } from "react-redux";
 import {
   setInitialSearchDatabase,
   getSearchResults,
@@ -22,21 +22,59 @@ const PlaceSearch = (props) => {
   }, []);
 
   const handleOnChange = (event, newValue) => {
+    //setting search box value
+    // can be either an array ["FOUND TERM", [dealers]] or null
     setSelectedSearchOption(newValue);
-    //if term is singular
-    // const content = renderToString(<InfoWindowComp dealerInfo={dealer} />);
-    //   infowindow.setContent(content);
-    //   infowindow.open(map, marker);
-    //   map.panTo(marker.getPosition());
 
+    // LOGIC BASED ON
+    // newValue
     if (newValue !== null) {
-      console.log(newValue);
-      //   dispatch({
-      //     type: "SET_SELECTED_DEALER",
-      //     val: newValue.dealer,
-      //   });
+      //disable dealer/distri filters
+      dispatch({
+        type: "SET_SHOW_ONLY_DEALERS",
+        val: false,
+      });
+      dispatch({
+        type: "SET_SHOW_ONLY_DISTRIBUTORS",
+        val: false,
+      });
+      //reseting country filter
+      dispatch({
+        type: "SET_SELECTED_COUNTRY",
+        val: null,
+      });
+      //setting chosen dealers
+      dispatch({
+        type: "SET_MARKERS_INFO",
+        val: newValue[1],
+      });
+      //DEALERS DETAILS WILL BE RENDERED IN THE FOOTER
+      dispatch({
+        type: "SET_DISPLAY_EXPANSION_PANEL",
+        val: true,
+      });
+      //setting searchBasedResults in Redux
+      dispatch({
+        type: "SET_SEARCH_BASED_RESULTS",
+        val: newValue[1],
+      });
     } else {
-      console.log(newValue);
+      // If newValue is null
+      //reset dealers
+      dispatch({
+        type: "SET_MARKERS_INFO",
+        val: dealers,
+      });
+      //REMOVING DEALERS DETAILS FOOTER
+      dispatch({
+        type: "SET_DISPLAY_EXPANSION_PANEL",
+        val: false,
+      });
+      //setting searchBasedResults in Redux
+      dispatch({
+        type: "SET_SEARCH_BASED_RESULTS",
+        val: [],
+      });
     }
   };
 
@@ -63,11 +101,11 @@ const PlaceSearch = (props) => {
       onInputChange={(event, newInputValue) =>
         handleInputChange(event, newInputValue)
       }
-      options={searchResults} // CHANGE
-      getOptionLabel={(option) => option.foundExpression}
-      style={{ width: "35%" }}
+      options={searchResults}
+      getOptionLabel={(option) => option[0]}
+      style={{ width: "35%", minWidth: "175px" }}
       renderInput={(params) => (
-        <TextField {...params} label="Find dealer" variant="filled" />
+        <TextField {...params} label="Find dealer worldwide" variant="filled" />
       )}
     />
   );

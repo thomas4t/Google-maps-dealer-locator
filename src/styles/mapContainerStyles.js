@@ -4,12 +4,11 @@ const containerSizing = {
   height: "100%",
 };
 const containerStyle = {
-  borderRadius: "10px",
+  borderRadius: "5px",
 };
 const mapDivStyle = {
   width: "99%",
-  height: "85%",
-  borderRadius: "5px",
+  height: "87%",
   margin: "auto",
 };
 
