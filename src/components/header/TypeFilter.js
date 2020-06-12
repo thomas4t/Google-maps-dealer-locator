@@ -22,7 +22,6 @@ function Alert(props) {
 }
 
 const TypeFilter = () => {
-  //states
   const showOnlyDealers = useSelector((state) => state.showOnlyDealers);
   const showOnlyDistributors = useSelector(
     (state) => state.showOnlyDistributors
@@ -41,145 +40,127 @@ const TypeFilter = () => {
   };
 
   const handleDealersChange = (event) => {
-    if (showOnlyDistributors) {
-      // if ONLY DISTRIB. is checked, disable its filter
-      dispatch({
-        type: "SET_SHOW_ONLY_DISTRIBUTORS",
-        val: false,
-      });
-    }
     let newSwitchValue = event.target.checked;
-    //SWITCH value ... true/false
-    dispatch({
-      type: "SET_SHOW_ONLY_DEALERS",
-      val: newSwitchValue,
-    });
-    determineDealersFilters(newSwitchValue);
-  };
-
-  const handleDistributorsChange = (event) => {
-    if (showOnlyDealers) {
-      // if ONLY DEALERS is checked, disable its filter
+    if (newSwitchValue) {
+      setDealerFilter();
+    } else {
       dispatch({
         type: "SET_SHOW_ONLY_DEALERS",
         val: false,
       });
+      removeDealerFilter();
     }
+  };
+
+  const handleDistributorsChange = (event) => {
     let newSwitchValue = event.target.checked;
-    //SWITCH value ... true/false
+    if (newSwitchValue) {
+      setDistributorFilter();
+    } else {
+      dispatch({
+        type: "SET_SHOW_ONLY_DISTRIBUTORS",
+        val: false,
+      });
+      removeDistributorFilter();
+    }
+  };
+
+  const setDealerFilter = () => {
+    let filteredDealers = markersInfo.filter((dealer) =>
+      dealer.content.type.includes("dealer")
+    );
+    if (filteredDealers.length !== 0) {
+      // If there are dealers in the current data, display them
+      dispatch({
+        type: "SET_MARKERS_INFO",
+        val: filteredDealers,
+      });
+      //Switching show dealer to true
+      dispatch({
+        type: "SET_SHOW_ONLY_DEALERS",
+        val: true,
+      });
+    } else {
+      //If there aren't any, don't allow the SWITCH to change value
+      setOpenSnackbar(true);
+    }
+  };
+
+  const removeDealerFilter = () => {
+    //if only distri is checked, make sure that filter gets displayed
+    if (showOnlyDistributors) {
+      selectedCountry === null
+        ? filterMarkersBy("distributor", null)
+        : filterMarkersBy("distributor", selectedCountry);
+      console.log("DISTRI");
+    } else {
+      resetMarkersWithRespectToFilters();
+    }
+  };
+
+  const setDistributorFilter = () => {
+    let filteredDealers = markersInfo.filter((dealer) =>
+      dealer.content.type.includes("distributor")
+    );
+    if (filteredDealers.length !== 0) {
+      dispatch({
+        type: "SET_MARKERS_INFO",
+        val: filteredDealers,
+      });
+      dispatch({
+        type: "SET_SHOW_ONLY_DISTRIBUTORS",
+        val: true,
+      });
+    } else {
+      setOpenSnackbar(true);
+    }
+  };
+
+  const removeDistributorFilter = () => {
+    if (showOnlyDealers) {
+      selectedCountry === null
+        ? filterMarkersBy("dealer", null)
+        : filterMarkersBy("dealer", selectedCountry);
+      console.log("DEALER");
+    } else {
+      resetMarkersWithRespectToFilters();
+    }
+  };
+
+  //HELPER METHODS
+  const setMarkers = (data) => {
     dispatch({
-      type: "SET_SHOW_ONLY_DISTRIBUTORS",
-      val: newSwitchValue,
+      type: "SET_MARKERS_INFO",
+      val: data,
     });
-    //Handles what markers should be displayed
-    determineDistriFilters(newSwitchValue);
   };
-
-  const determineDealersFilters = (newSwitchValue) => {
-    //If new value is true = DISPLAY ONLY DEALERS
-    if (newSwitchValue) {
-      let filteredDealers = markersInfo.filter((dealer) =>
-        dealer.content.type.includes("dealer")
+  const filterMarkersBy = (typeOfFilter, country = null) => {
+    let filteredDealers = dealers.filter((dealer) =>
+      dealer.content.type.includes(typeOfFilter)
+    );
+    if (country != null) {
+      filteredDealers = filteredDealers.filter(
+        (dealer) => dealer.content.state === country
       );
-      if (filteredDealers.length !== 0) {
-        // If there are dealers in the current data, display them
-        dispatch({
-          type: "SET_MARKERS_INFO",
-          val: filteredDealers,
-        });
-      } else {
-        //If there aren't any, don't allow the SWITCH to change value
-        //Add some popup that says cant change, cause there arent any
-        dispatch({
-          type: "SET_SHOW_ONLY_DEALERS",
-          val: !newSwitchValue,
-        });
-        console.log("NO DEALERS FOUND");
-        setOpenSnackbar(true);
-      }
+    }
+    setMarkers(filteredDealers);
+  };
+  const resetMarkersWithRespectToFilters = () => {
+    if (selectedCountry !== null) {
+      setMarkersBasedOnSelectedCountry();
+    } else if (searchBasedResults.length !== 0) {
+      // searchBasedResults can be an array of chosen dealers or null
+      setMarkers(searchBasedResults);
     } else {
-      //IF new value is false
-      //DISABLING only dealer filter
-      if (selectedCountry !== null) {
-        // if country filter is selected => Setting markers BACK to be country filtered
-        let filteredDealers = dealers.filter(
-          (dealer) => dealer.content.state === selectedCountry
-        );
-        dispatch({
-          type: "SET_MARKERS_INFO",
-          val: filteredDealers,
-        });
-      } else if (searchBasedResults.length !== 0) {
-        // searchBasedResults can be an array of chosen dealers or null
-        // if a search option is selected => Setting markers TO BE search filtered again
-        dispatch({
-          type: "SET_MARKERS_INFO",
-          val: searchBasedResults,
-        });
-      } else {
-        // if no filter is selected
-        //set markers to their initial state
-        dispatch({
-          type: "SET_MARKERS_INFO",
-          val: dealers,
-        });
-      }
+      //reset completely
+      setMarkers(dealers);
     }
   };
-
-  const determineDistriFilters = (newSwitchValue) => {
-    //If new value is true = DISPLAY ONLY DISTRIBUTORS
-    if (newSwitchValue) {
-      let filteredDealers = markersInfo.filter((dealer) =>
-        dealer.content.type.includes("distributor")
-      );
-      if (filteredDealers.length !== 0) {
-        // If there are distributors of the current markers
-        // Display them
-        dispatch({
-          type: "SET_MARKERS_INFO",
-          val: filteredDealers,
-        });
-      } else {
-        //If there aren't any, don't allow the SWITCH to change value
-        //Add some popup that says cant change, cause there arent any
-        dispatch({
-          type: "SET_SHOW_ONLY_DISTRIBUTORS",
-          val: !newSwitchValue,
-        });
-        console.log("NO DISTRIBUTORS FOUND");
-        setOpenSnackbar(true);
-      }
-    } else {
-      //IF new value is false
-      //DISABLING only distributors filter
-      if (selectedCountry !== null) {
-        // if selected country is selected => SETTING MARKERS TO BE country filtered
-        let filteredDealers = dealers.filter(
-          (dealer) => dealer.content.state === selectedCountry
-        );
-        dispatch({
-          type: "SET_MARKERS_INFO",
-          val: filteredDealers,
-        });
-      } else if (searchBasedResults.length !== 0) {
-        // searchBasedResults can be an array of chosen dealers or null
-
-        // if a search option is selected => SET MARKERS TO BE search filtered
-        console.log(searchBasedResults);
-        dispatch({
-          type: "SET_MARKERS_INFO",
-          val: searchBasedResults,
-        });
-      } else {
-        //set markers to their initial state
-        dispatch({
-          type: "SET_MARKERS_INFO",
-          val: dealers,
-        });
-      }
-      console.log("DISABLE ONLY DISTRI FILTER");
-    }
+  const setMarkersBasedOnSelectedCountry = () => {
+    let filteredDealers = dealers.filter(
+      (dealer) => dealer.content.state === selectedCountry
+    );
+    setMarkers(filteredDealers);
   };
 
   return (
