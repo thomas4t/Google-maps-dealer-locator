@@ -31,6 +31,7 @@ const TypeFilter = () => {
   const selectedCountry = useSelector((state) => state.selectedCountry);
   const searchBasedResults = useSelector((state) => state.searchBasedResults);
   const [openSnackbar, setOpenSnackbar] = useState(false);
+  const [isTypeFilterOn, setIsTypeFilterOn] = useState(false);
   const dispatch = useDispatch();
 
   const handleSnackbarClose = (event, reason) => {
@@ -41,19 +42,20 @@ const TypeFilter = () => {
   };
 
   const handleDealersChange = (event) => {
+    let newSwitchValue = event.target.checked;
     if (showOnlyDistributors) {
       // if ONLY DISTRIB. is checked, disable its filter
       dispatch({
         type: "SET_SHOW_ONLY_DISTRIBUTORS",
         val: false,
       });
+    } else {
     }
-    let newSwitchValue = event.target.checked;
-    //SWITCH value ... true/false
     dispatch({
       type: "SET_SHOW_ONLY_DEALERS",
       val: newSwitchValue,
     });
+
     determineDealersFilters(newSwitchValue);
   };
 
@@ -94,36 +96,10 @@ const TypeFilter = () => {
           type: "SET_SHOW_ONLY_DEALERS",
           val: !newSwitchValue,
         });
-        console.log("NO DEALERS FOUND");
         setOpenSnackbar(true);
       }
     } else {
-      //IF new value is false
-      //DISABLING only dealer filter
-      if (selectedCountry !== null) {
-        // if country filter is selected => Setting markers BACK to be country filtered
-        let filteredDealers = dealers.filter(
-          (dealer) => dealer.content.state === selectedCountry
-        );
-        dispatch({
-          type: "SET_MARKERS_INFO",
-          val: filteredDealers,
-        });
-      } else if (searchBasedResults.length !== 0) {
-        // searchBasedResults can be an array of chosen dealers or null
-        // if a search option is selected => Setting markers TO BE search filtered again
-        dispatch({
-          type: "SET_MARKERS_INFO",
-          val: searchBasedResults,
-        });
-      } else {
-        // if no filter is selected
-        //set markers to their initial state
-        dispatch({
-          type: "SET_MARKERS_INFO",
-          val: dealers,
-        });
-      }
+      restoreUnfilteredMarkers();
     }
   };
 
@@ -134,52 +110,53 @@ const TypeFilter = () => {
         dealer.content.type.includes("distributor")
       );
       if (filteredDealers.length !== 0) {
-        // If there are distributors of the current markers
-        // Display them
+        // If there are distributors of the current markers, display them
         dispatch({
           type: "SET_MARKERS_INFO",
           val: filteredDealers,
         });
       } else {
         //If there aren't any, don't allow the SWITCH to change value
-        //Add some popup that says cant change, cause there arent any
         dispatch({
           type: "SET_SHOW_ONLY_DISTRIBUTORS",
           val: !newSwitchValue,
         });
-        console.log("NO DISTRIBUTORS FOUND");
-        setOpenSnackbar(true);
+        setOpenSnackbar(true); //WARNING "POPUP"
       }
     } else {
-      //IF new value is false
-      //DISABLING only distributors filter
-      if (selectedCountry !== null) {
-        // if selected country is selected => SETTING MARKERS TO BE country filtered
-        let filteredDealers = dealers.filter(
-          (dealer) => dealer.content.state === selectedCountry
-        );
-        dispatch({
-          type: "SET_MARKERS_INFO",
-          val: filteredDealers,
-        });
-      } else if (searchBasedResults.length !== 0) {
-        // searchBasedResults can be an array of chosen dealers or null
-
-        // if a search option is selected => SET MARKERS TO BE search filtered
-        console.log(searchBasedResults);
-        dispatch({
-          type: "SET_MARKERS_INFO",
-          val: searchBasedResults,
-        });
-      } else {
-        //set markers to their initial state
-        dispatch({
-          type: "SET_MARKERS_INFO",
-          val: dealers,
-        });
-      }
-      console.log("DISABLE ONLY DISTRI FILTER");
+      restoreUnfilteredMarkers();
     }
+  };
+
+  const restoreUnfilteredMarkers = () => {
+    if (selectedCountry !== null) {
+      setMarkersBasedOnSelectedCountry();
+    } else if (searchBasedResults.length !== 0) {
+      // searchBasedResults can be an array of chosen dealers or null
+      setMarkersBasedOnSearch();
+    } else {
+      //set markers to their initial state
+      dispatch({
+        type: "SET_MARKERS_INFO",
+        val: dealers,
+      });
+    }
+  };
+
+  const setMarkersBasedOnSelectedCountry = () => {
+    let filteredDealers = dealers.filter(
+      (dealer) => dealer.content.state === selectedCountry
+    );
+    dispatch({
+      type: "SET_MARKERS_INFO",
+      val: filteredDealers,
+    });
+  };
+  const setMarkersBasedOnSearch = () => {
+    dispatch({
+      type: "SET_MARKERS_INFO",
+      val: searchBasedResults,
+    });
   };
 
   return (
